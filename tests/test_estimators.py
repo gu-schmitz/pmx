@@ -13,12 +13,12 @@ def test_BAR(gf):
 
     seed(42)
     bar = BAR(wf=wf, wr=wr, T=298, nblocks=3, nboots=10)
-    assert_almost_equal(bar.dg, 0.8532451987153411, decimal=7)
-    assert_almost_equal(bar.err, 0.557805610661955, decimal=7)
-    assert_almost_equal(bar.conv, -0.1184253367468773, decimal=7)
-    assert_almost_equal(bar.err_blocks, 1.2327258529433998, decimal=7)
-    assert_almost_equal(bar.err_boot, 0.4613033210812272, decimal=7)
-    assert_almost_equal(bar.conv_err_boot, 0.05189927533062071, decimal=7)
+    assert_almost_equal(bar.dg, 0.8532607774, decimal=7)
+    assert_almost_equal(bar.err, 0.5578054526, decimal=7)
+    assert_almost_equal(bar.conv, -0.1184251411, decimal=7)
+    assert_almost_equal(bar.err_blocks, 1.2327372845, decimal=7)
+    assert_almost_equal(bar.err_boot, 0.4613070362, decimal=7)
+    assert_almost_equal(bar.conv_err_boot, 0.0518989383, decimal=7)
 
 
 def test_Jarz(gf):

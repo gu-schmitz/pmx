@@ -1,6 +1,7 @@
 import numpy as np
 import sys
-from scipy.optimize import fmin
+from scipy.optimize import brentq
+from scipy.special import logsumexp
 import scipy.stats
 from .utils import data2gauss
 
@@ -815,6 +816,7 @@ class BAR:
         self.dg = self.calc_dg(self.wf, self.wr, self.T)
         self.err = self.calc_err(self.dg, self.wf, self.wr, self.T)
         self.conv = self.calc_conv(self.dg, self.wf, self.wr, self.T)
+        self.overlap = bool(np.max(self.wr) >= np.min(self.wf))
         if nboots > 0:
             self.err_boot = self.calc_err_boot(self.wf, self.wr, nboots,
                                                self.T)
@@ -846,30 +848,28 @@ class BAR:
         dg : float
             the BAR free energy estimate.
         '''
-
+        wf = np.asarray(wf, dtype=float)
+        wr = np.asarray(wr, dtype=float)
+        if not (np.all(np.isfinite(wf)) and np.all(np.isfinite(wr))):
+            raise ValueError('BAR: the work values contain NaN or inf')
         nf = float(len(wf))
         nr = float(len(wr))
         beta = 1./(kb*T)
         M = kb * T * np.log(nf/nr)
 
-        def func(x, wf, wr):
-            sf = 0
-            for v in wf:
-                sf += 1./(1+np.exp(beta*(M+v-x)))
-
-            sr = 0
-            for v in wr:
-                sr += 1./(1+np.exp(-beta*(M+v-x)))
-
-            r = sf-sr
-            return r**2
-
-        avA = np.average(wf)
-        avB = np.average(wr)
-        x0 = (avA+avB)/2.
-        dg = fmin(func, x0=x0, args=(wf, wr), disp=0)
-
-        return float(dg[0])
+        # Bennett's equation in log space cannot overflow or underflow
+        # even when the distriutions are far apart
+        def func(x):
+            lf = logsumexp(-np.logaddexp(0, beta*(M+wf-x)))
+            lr = logsumexp(-np.logaddexp(0, -beta*(M+wr-x)))
+            return lf - lr
+        # the root always lies within the range of the work values padded
+        # by |M| + kT*(ln(nf+nr) + 10), so this bracket has a sign change
+        pad = abs(M) + kb*T*(np.log(nf+nr) + 10)
+        lo = min(wf.min(), wr.min()) - pad
+        hi = max(wf.max(), wr.max()) + pad
+        dg = brentq(func, lo, hi, xtol=1e-8, maxiter=500)
+        return dg
 
     @staticmethod
     def calc_err(dg, wf, wr, T):

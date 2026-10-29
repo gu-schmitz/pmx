@@ -564,13 +564,15 @@ def main(args):
         if quiet is True:
             print('Running BAR analysis...')
         elif quiet is False:
-            print('  Running Nelder-Mead Simplex algorithm... ')
+            print('  Solving Bennett\'s equation... ')
 
         bar = BAR(res_ab, res_ba, T=T, nboots=nboots, nblocks=nblocks)
         if args.pickle:
             pickle.dump(bar, open("bar_results.pkl", "wb"))
 
         _tee(out, '  BAR: dG = {dg:8.{p}f} {u}'.format(dg=bar.dg*unit_fact, p=prec, u=units), quiet=quiet)
+        if not bar.overlap:
+            _tee(out, '  BAR: WARNING: the forward and reverse work distributions do not overlap', quiet=quiet)
         _tee(out, '  BAR: Std Err (analytical) = {e:8.{p}f} {u}'.format(e=bar.err*unit_fact, p=prec, u=units), quiet=quiet)
 
         if nboots > 0:
